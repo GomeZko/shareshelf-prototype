@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F1EDFF">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="description" content="ShareShelf clickable prototype: rent everyday things from people nearby.">
 <style>[hidden]{display:none!important} img{max-width:100%} body{margin:0}</style>
 <title>ShareShelf App Prototype</title>
@@ -29,7 +31,12 @@
 * { box-sizing: border-box; }
 html, body { height: 100%; }
 body { background: var(--ink); color: var(--ink); font-family: var(--f-body); font-size: 15px; -webkit-font-smoothing: antialiased; }
-button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; -webkit-user-select: none; user-select: none; }
+html { -webkit-text-size-adjust: 100%; }
+body { -webkit-tap-highlight-color: transparent; touch-action: manipulation; overscroll-behavior: none; }
+input, select { font-size: 16px !important; }
+input[type=search] { -webkit-appearance: none; appearance: none; }
+input[type=search]::-webkit-search-cancel-button { -webkit-appearance: none; }
 button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
 
 .stage { min-height: 100%; display: flex; align-items: center; justify-content: center; gap: 56px; padding-block: 24px; padding-inline: 16px; }
@@ -42,13 +49,28 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .phone { position: relative; width: 390px; height: min(844px, calc(100vh - 48px)); background: var(--lilac); border: 10px solid #000; border-radius: 48px; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,.45); flex: none; }
 @media (max-width: 760px) { .caption { display: none; } }
 @media (max-width: 520px) {
-  .stage { padding: 0; display: block; height: 100%; }
-  .phone { width: 100%; height: 100%; border: 0; border-radius: 0; box-shadow: none; }
+  html, body { overflow: hidden; }
+  .stage { padding: 0; display: block; height: 100%; min-height: 0; }
+  .phone { position: fixed; inset: 0; width: 100%; height: 100%; height: 100dvh; border: 0; border-radius: 0; box-shadow: none; }
+  .screen { padding-top: calc(16px + env(safe-area-inset-top, 0px)); padding-left: calc(16px + env(safe-area-inset-left, 0px)); padding-right: calc(16px + env(safe-area-inset-right, 0px)); }
+  .screen.flush { padding-top: 0; padding-left: 0; padding-right: 0; }
+  .hero { height: calc(260px + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px); }
+  .hero .round { top: calc(14px + env(safe-area-inset-top, 0px)); }
+  .hero .heart { top: calc(14px + env(safe-area-inset-top, 0px)); }
+  .chips { margin-inline: -16px; padding-inline: 16px; }
+  h2 { font-size: 27px; }
+  .toast { bottom: calc(100px + env(safe-area-inset-bottom, 0px)); }
+}
+@media (max-width: 360px) {
+  .grid { gap: 10px; }
+  .thumb { height: 96px; }
+  .tab { width: 50px; }
+  .cal button { height: 34px; }
 }
 
-.screen { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; padding: 22px 20px 110px; display: flex; flex-direction: column; gap: 16px; background: var(--lilac); }
-.screen.no-tab { padding-bottom: 120px; }
-.screen.flush { padding: 0 0 120px; gap: 0; }
+.screen { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding: 22px 20px calc(110px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 16px; background: var(--lilac); }
+.screen.no-tab { padding-bottom: calc(130px + env(safe-area-inset-bottom, 0px)); }
+.screen.flush { padding: 0 0 calc(130px + env(safe-area-inset-bottom, 0px)); gap: 0; }
 .screen[hidden] { display: none !important; }
 
 h2 { font-family: var(--f-display); font-weight: 800; font-size: 30px; line-height: 1.05; margin: 0; letter-spacing: -.5px; text-wrap: balance; }
@@ -85,7 +107,7 @@ p { margin: 0; }
 .badge-new { position: absolute; top: 8px; left: 8px; background: var(--mint); border: 1.5px solid var(--ink); font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px; }
 .empty { background: var(--paper); border: 2px dashed var(--muted); border-radius: 18px; padding: 24px; text-align: center; color: var(--soft); line-height: 1.5; }
 
-.tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 82px; padding: 8px 18px calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--paper); border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; z-index: 5; }
+.tabbar { position: absolute; left: 0; right: 0; bottom: 0; min-height: 76px; padding: 8px 18px calc(12px + env(safe-area-inset-bottom, 0px)); background: var(--paper); border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; z-index: 5; }
 .tabbar[hidden] { display: none !important; }
 .tab { display: grid; justify-items: center; gap: 3px; font-size: 11px; font-weight: 500; width: 56px; color: var(--muted); }
 .tab svg { width: 24px; height: 24px; }
@@ -551,7 +573,6 @@ p { margin: 0; }
   function openChat(id) {
     const bk = S.bookings.find(b => b.id === id); S.chat = bk;
     drawChat(); show('chat'); $('#s-chat').scrollTop = $('#s-chat').scrollHeight;
-    setTimeout(() => $('#chat-input').focus({ preventScroll: true }), 50);
   }
   function drawChat(typing) {
     const bk = S.chat, it = byId(bk.item), s = $('#s-chat');
@@ -584,6 +605,18 @@ p { margin: 0; }
     setTimeout(() => { bk.msgs.push({ who: 'them', text: REPLIES[Math.min(bk.replies, REPLIES.length - 1)] }); bk.replies++; if (S.current === 'chat') drawChat(); }, 1200);
   }
   $('#send').onclick = send;
+  if (window.visualViewport) {
+    const fit = () => {
+      const vv = window.visualViewport, ph = $('#phone');
+      if (window.innerWidth > 520) { ph.style.height = ''; ph.style.top = ''; return; }
+      ph.style.height = vv.height + 'px';
+      ph.style.top = vv.offsetTop + 'px';
+      if (S.current === 'chat') { const c = $('#s-chat'); c.scrollTop = c.scrollHeight; }
+    };
+    visualViewport.addEventListener('resize', fit);
+    visualViewport.addEventListener('scroll', fit);
+  }
+  $('#chat-input').addEventListener('focus', () => setTimeout(() => { const c = $('#s-chat'); c.scrollTop = c.scrollHeight; }, 300));
   $('#chat-input').addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
 
   function renderChats() {
