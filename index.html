@@ -76,6 +76,9 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .card { flex-shrink: 0; }
 .thumb { flex: none; }
 .pad > * { min-width: 0; }
+.thumb, .hero, .list-item .mini { position: relative; overflow: hidden; }
+.thumb img, .hero img, .list-item .mini img { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; }
+.hero .round, .hero .heart, .hero .dots { z-index: 2; }
 
 h2 { font-family: var(--f-display); font-weight: 800; font-size: 30px; line-height: 1.05; margin: 0; letter-spacing: -.5px; text-wrap: balance; }
 h3 { font-family: var(--f-display); font-weight: 800; font-size: 20px; margin: 0; }
