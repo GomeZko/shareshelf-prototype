@@ -1,0 +1,660 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="ShareShelf clickable prototype: rent everyday things from people nearby.">
+<style>[hidden]{display:none!important} img{max-width:100%} body{margin:0}</style>
+<title>ShareShelf App Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Onest:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: a single phone-sized app; on wide screens it sits in a phone frame with a short caption beside it, on phones it fills the screen */
+:root {
+  --ink: #160F33;
+  --violet: #5B2EFF;
+  --lilac: #F1EDFF;
+  --paper: #FFFFFF;
+  --sun: #FFD23F;
+  --coral: #FF5A4E;
+  --mint: #2DD4A7;
+  --muted: #6E6890;
+  --line: #E2DCF7;
+  --soft: #3B3360;
+  --f-display: "Bricolage Grotesque", "Arial Black", system-ui, sans-serif;
+  --f-body: "Onest", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { background: var(--ink); color: var(--ink); font-family: var(--f-body); font-size: 15px; -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
+
+.stage { min-height: 100%; display: flex; align-items: center; justify-content: center; gap: 56px; padding-block: 24px; padding-inline: 16px; }
+.caption { max-width: 300px; color: #D9D0FF; display: grid; gap: 14px; }
+.caption h1 { font-family: var(--f-display); font-weight: 800; font-size: 44px; line-height: 1; color: var(--sun); margin: 0; letter-spacing: -1px; }
+.caption p { margin: 0; line-height: 1.5; }
+.caption ol { margin: 0; padding-left: 20px; line-height: 1.7; }
+.caption .tag { justify-self: start; background: var(--sun); color: var(--ink); font-weight: 700; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; padding: 6px 14px; border-radius: 999px; transform: rotate(-2deg); }
+
+.phone { position: relative; width: 390px; height: min(844px, calc(100vh - 48px)); background: var(--lilac); border: 10px solid #000; border-radius: 48px; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,.45); flex: none; }
+@media (max-width: 760px) { .caption { display: none; } }
+@media (max-width: 520px) {
+  .stage { padding: 0; display: block; height: 100%; }
+  .phone { width: 100%; height: 100%; border: 0; border-radius: 0; box-shadow: none; }
+}
+
+.screen { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; padding: 22px 20px 110px; display: flex; flex-direction: column; gap: 16px; background: var(--lilac); }
+.screen.no-tab { padding-bottom: 120px; }
+.screen.flush { padding: 0 0 120px; gap: 0; }
+.screen[hidden] { display: none !important; }
+
+h2 { font-family: var(--f-display); font-weight: 800; font-size: 30px; line-height: 1.05; margin: 0; letter-spacing: -.5px; text-wrap: balance; }
+h3 { font-family: var(--f-display); font-weight: 800; font-size: 20px; margin: 0; }
+p { margin: 0; }
+.muted { color: var(--muted); }
+.row { display: flex; align-items: center; gap: 10px; }
+.between { justify-content: space-between; }
+
+.loc { color: var(--violet); font-weight: 600; font-size: 14px; display: flex; gap: 6px; align-items: center; }
+.demo-pill { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; background: var(--ink); color: var(--sun); border-radius: 999px; padding: 5px 10px; }
+
+.search { display: flex; align-items: center; gap: 10px; background: var(--paper); border: 2px solid var(--ink); border-radius: 16px; padding: 12px 14px; }
+.search input { border: 0; outline: 0; font: inherit; font-size: 15px; width: 100%; background: transparent; color: var(--ink); }
+.chips { display: flex; gap: 8px; overflow-x: auto; margin-inline: -20px; padding-inline: 20px; padding-bottom: 4px; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { flex: none; background: var(--paper); border: 1.5px solid var(--ink); border-radius: 999px; padding: 8px 15px; font-weight: 600; font-size: 14px; }
+.chip.on { background: var(--sun); }
+
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.card { position: relative; text-align: left; background: var(--paper); border: 2px solid var(--ink); border-radius: 18px; overflow: hidden; display: flex; flex-direction: column; transition: transform .12s; }
+.card:active { transform: scale(.97); }
+.thumb { height: 112px; display: grid; place-items: center; background: var(--paper); }
+.thumb img { width: 100%; height: 100%; object-fit: contain; }
+.thumb img.cover { object-fit: cover; }
+.thumb svg { width: 48px; height: 48px; }
+.card .body { padding: 9px 11px 12px; display: grid; gap: 3px; }
+.card .t { font-weight: 600; font-size: 14px; line-height: 1.25; }
+.price { font-family: var(--f-display); font-weight: 800; font-size: 17px; color: var(--violet); }
+.meta { font-size: 12px; color: var(--muted); }
+.heart { position: absolute; top: 8px; right: 8px; width: 34px; height: 34px; border-radius: 50%; background: var(--paper); border: 1.5px solid var(--ink); display: grid; place-items: center; }
+.heart svg { width: 18px; height: 18px; }
+.heart.on svg path { fill: var(--coral); stroke: var(--coral); }
+.badge-new { position: absolute; top: 8px; left: 8px; background: var(--mint); border: 1.5px solid var(--ink); font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px; }
+.empty { background: var(--paper); border: 2px dashed var(--muted); border-radius: 18px; padding: 24px; text-align: center; color: var(--soft); line-height: 1.5; }
+
+.tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 82px; padding: 8px 18px calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--paper); border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; z-index: 5; }
+.tabbar[hidden] { display: none !important; }
+.tab { display: grid; justify-items: center; gap: 3px; font-size: 11px; font-weight: 500; width: 56px; color: var(--muted); }
+.tab svg { width: 24px; height: 24px; }
+.tab svg * { stroke: currentColor; }
+.tab.on { color: var(--ink); font-weight: 700; }
+.tab-plus { width: 52px; height: 52px; border-radius: 50%; background: var(--coral); border: 2px solid var(--ink); display: grid; place-items: center; box-shadow: 0 4px 0 var(--ink); }
+.tab-plus svg { width: 24px; height: 24px; }
+
+.topbar { display: flex; align-items: center; gap: 12px; }
+.round { width: 42px; height: 42px; border-radius: 50%; background: var(--paper); border: 2px solid var(--ink); display: grid; place-items: center; flex: none; }
+.round svg { width: 22px; height: 22px; }
+
+.hero { position: relative; height: 290px; background: var(--paper); display: grid; place-items: center; border-bottom: 2px solid var(--ink); flex: none; }
+.hero img { width: 100%; height: 100%; object-fit: contain; }
+.hero img.cover { object-fit: cover; }
+.hero svg.big { width: 110px; height: 110px; }
+.hero .round { position: absolute; top: 18px; left: 18px; }
+.hero .heart { top: 18px; right: 18px; width: 42px; height: 42px; border-width: 2px; }
+.dots { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; }
+.dots button { width: 9px; height: 9px; border-radius: 50%; background: rgba(22,15,51,.25); }
+.dots button.on { background: var(--ink); width: 22px; border-radius: 6px; }
+.pad { padding: 20px; display: grid; gap: 16px; }
+
+.box { background: var(--paper); border: 2px solid var(--ink); border-radius: 18px; padding: 16px; display: grid; gap: 12px; }
+.avatar { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; flex: none; border: 2px solid var(--ink); }
+.tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.tags span { background: var(--paper); border: 1.5px solid var(--ink); border-radius: 999px; padding: 7px 13px; font-size: 13px; font-weight: 600; }
+
+.bottombar { position: absolute; left: 0; right: 0; bottom: 0; background: var(--paper); border-top: 1px solid var(--line); padding: 14px 20px calc(18px + env(safe-area-inset-bottom, 0px)); display: flex; align-items: center; gap: 14px; z-index: 6; }
+.bottombar[hidden] { display: none !important; }
+.btn { background: var(--violet); color: #fff; border: 2px solid var(--ink); border-radius: 16px; padding: 15px 18px; font-weight: 700; font-size: 16px; box-shadow: 0 4px 0 var(--ink); text-align: center; width: 100%; transition: transform .1s, box-shadow .1s; }
+.btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+.btn[disabled] { background: #C3BDD9; color: var(--paper); cursor: not-allowed; }
+.btn.alt { background: var(--paper); color: var(--ink); }
+.btn.sun { background: var(--sun); color: var(--ink); }
+
+.cal-head { display: flex; justify-content: space-between; align-items: center; }
+.cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; font-variant-numeric: tabular-nums; }
+.cal .dow { font-size: 12px; font-weight: 600; color: var(--muted); padding-block: 4px; }
+.cal button { height: 38px; border-radius: 10px; font-weight: 500; font-size: 14px; }
+.cal button[disabled] { color: #C9C3DE; cursor: default; }
+.cal button.in { background: #E4DCFF; }
+.cal button.edge { background: var(--violet); color: #fff; font-weight: 700; }
+.line { display: flex; justify-content: space-between; gap: 12px; font-size: 15px; color: var(--soft); }
+.line b { color: var(--ink); }
+.total { border-top: 1.5px solid var(--line); padding-top: 12px; font-weight: 700; color: var(--ink); }
+.switch { position: relative; width: 50px; height: 30px; border-radius: 999px; background: #C9C3DE; border: 2px solid var(--ink); flex: none; transition: background .15s; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--paper); border: 1.5px solid var(--ink); transition: left .15s; }
+.switch.on { background: var(--mint); }
+.switch.on::after { left: 23px; }
+
+.sheet-bg { position: absolute; inset: 0; background: rgba(22,15,51,.5); z-index: 20; display: flex; align-items: flex-end; }
+.sheet-bg[hidden] { display: none !important; }
+.sheet { width: 100%; background: var(--paper); border-radius: 26px 26px 0 0; border-top: 2px solid var(--ink); padding: 22px 20px calc(26px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 14px; }
+.cardline { display: flex; align-items: center; gap: 12px; border: 2px solid var(--ink); border-radius: 14px; padding: 12px 14px; font-weight: 600; }
+.cardchip { width: 40px; height: 28px; border-radius: 6px; background: var(--ink); color: var(--sun); font-size: 10px; font-weight: 700; display: grid; place-items: center; }
+
+.success { background: var(--sun); }
+.bigcheck { width: 88px; height: 88px; border-radius: 50%; background: var(--violet); border: 3px solid var(--ink); display: grid; place-items: center; }
+.bigcheck svg { width: 42px; height: 42px; }
+
+.msgs { display: grid; gap: 10px; }
+.msg { max-width: 78%; padding: 10px 14px; border-radius: 16px; line-height: 1.4; font-weight: 500; }
+.msg.me { justify-self: end; background: var(--violet); color: #fff; border-bottom-right-radius: 4px; }
+.msg.them { justify-self: start; background: var(--paper); border: 1.5px solid var(--ink); border-bottom-left-radius: 4px; }
+.msg.sys { justify-self: center; background: transparent; color: var(--muted); font-size: 12px; font-weight: 600; }
+.typing { justify-self: start; color: var(--muted); font-size: 13px; }
+.composer { position: absolute; left: 0; right: 0; bottom: 0; background: var(--lilac); padding: 10px 16px calc(16px + env(safe-area-inset-bottom, 0px)); display: flex; gap: 10px; z-index: 6; }
+.composer[hidden] { display: none !important; }
+.composer input { flex: 1; min-width: 0; border: 2px solid var(--ink); border-radius: 999px; padding: 12px 16px; font: inherit; font-size: 15px; background: var(--paper); color: var(--ink); }
+.send { width: 48px; height: 48px; border-radius: 50%; background: var(--violet); border: 2px solid var(--ink); display: grid; place-items: center; flex: none; }
+.send svg { width: 20px; height: 20px; }
+.check-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 12px; font-weight: 600; text-align: left; width: 100%; }
+.check-item .box-i { width: 26px; height: 26px; border-radius: 8px; border: 2px solid var(--ink); display: grid; place-items: center; flex: none; }
+.check-item.done { border-color: var(--mint); background: #E6FBF5; }
+.check-item.done .box-i { background: var(--mint); }
+
+.field { display: grid; gap: 6px; }
+.field label { font-size: 13px; font-weight: 600; color: var(--soft); }
+.field input, .field select { border: 2px solid var(--ink); border-radius: 14px; padding: 12px 14px; font: inherit; font-size: 15px; background: var(--paper); color: var(--ink); width: 100%; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.upload { border: 2px dashed var(--ink); border-radius: 18px; background: var(--paper); min-height: 130px; display: grid; place-items: center; text-align: center; gap: 6px; padding: 14px; position: relative; overflow: hidden; }
+.upload img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.upload input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.ai { background: #EDE7FF; border: 2px solid var(--violet); border-radius: 16px; padding: 12px 14px; display: flex; gap: 12px; align-items: center; }
+.ai-tag { background: var(--violet); color: #fff; font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 999px; }
+
+.list-item { display: flex; gap: 12px; align-items: center; background: var(--paper); border: 2px solid var(--ink); border-radius: 16px; padding: 10px; text-align: left; width: 100%; }
+.list-item .mini { width: 56px; height: 56px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--paper); display: grid; place-items: center; overflow: hidden; flex: none; }
+.list-item .mini img { width: 100%; height: 100%; object-fit: contain; }
+.list-item .mini img.cover { object-fit: cover; }
+.list-item .mini svg { width: 28px; height: 28px; }
+.status { font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 999px; border: 1.5px solid var(--ink); white-space: nowrap; }
+.st-booked { background: var(--sun); }
+.st-picked { background: var(--mint); }
+.st-live { background: #E4DCFF; }
+
+.toast { position: absolute; left: 50%; bottom: 100px; transform: translate(-50%, 20px); background: var(--ink); color: #fff; padding: 12px 18px; border-radius: 14px; font-weight: 600; font-size: 14px; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 40; width: max-content; max-width: 86%; text-align: center; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+
+<div class="stage">
+  <aside class="caption">
+    <span class="tag">Prototype</span>
+    <h1>ShareShelf</h1>
+    <p>Rent everyday things from people nearby. This is a clickable demo: no real payments, sample data only.</p>
+    <ol>
+      <li>Search or pick a category</li>
+      <li>Open an item and choose dates</li>
+      <li>Pay, then chat with the lender</li>
+      <li>Tap + to list your own item</li>
+    </ol>
+  </aside>
+
+  <div class="phone" id="phone">
+    <!-- HOME -->
+    <section class="screen" id="s-home">
+      <div class="row between">
+        <span class="loc"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 22s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z" stroke="#5B2EFF" stroke-width="2.5"/><circle cx="12" cy="10" r="2.5" fill="#5B2EFF"/></svg>Kristiine, Tallinn</span>
+        <span class="demo-pill">Demo</span>
+      </div>
+      <h2>What do you need today?</h2>
+      <label class="search" for="q">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#6E6890" stroke-width="2"/><path d="M20 20l-4-4" stroke="#6E6890" stroke-width="2" stroke-linecap="round"/></svg>
+        <input id="q" type="search" placeholder="Search drills, tents, cameras…" autocomplete="off">
+      </label>
+      <div class="chips" id="chips"></div>
+      <div class="row between"><h3 id="home-title">Nearby you</h3><span class="muted" id="home-count"></span></div>
+      <div class="grid" id="home-grid"></div>
+    </section>
+
+    <!-- SAVED -->
+    <section class="screen" id="s-saved" hidden>
+      <h2>Saved</h2>
+      <p class="muted">Items you marked with a heart.</p>
+      <div class="grid" id="saved-grid"></div>
+    </section>
+
+    <!-- CHATS -->
+    <section class="screen" id="s-chats" hidden>
+      <h2>Chats</h2>
+      <div id="chats-list" style="display:grid;gap:12px"></div>
+    </section>
+
+    <!-- PROFILE -->
+    <section class="screen" id="s-profile" hidden>
+      <div class="row"><div class="avatar" style="width:60px;height:60px;background:#FFD23F;font-size:20px">AG</div><div><h2 style="font-size:24px">Aleksandr G.</h2><p class="muted">Kristiine · verified by email and phone</p></div></div>
+      <h3>My bookings</h3>
+      <div id="my-bookings" style="display:grid;gap:10px"></div>
+      <h3>My listings</h3>
+      <div id="my-listings" style="display:grid;gap:10px"></div>
+      <button class="btn alt" id="reset">Reset demo</button>
+    </section>
+
+    <!-- ITEM -->
+    <section class="screen flush no-tab" id="s-item" hidden></section>
+
+    <!-- BOOK -->
+    <section class="screen no-tab" id="s-book" hidden></section>
+
+    <!-- DONE -->
+    <section class="screen no-tab success" id="s-done" hidden></section>
+
+    <!-- CHAT -->
+    <section class="screen no-tab" id="s-chat" hidden></section>
+
+    <!-- LIST -->
+    <section class="screen no-tab" id="s-list" hidden>
+      <div class="topbar"><button class="round" data-back aria-label="Back"><svg viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="#160F33" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button><h2 style="font-size:26px">List an item</h2></div>
+      <div class="upload" id="upload">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="14" rx="3" stroke="#5B2EFF" stroke-width="2"/><circle cx="12" cy="13" r="3.5" stroke="#5B2EFF" stroke-width="2"/><path d="M8 6l1.5-2h5L16 6" stroke="#5B2EFF" stroke-width="2"/></svg>
+        <p style="font-weight:600">Add a photo</p>
+        <p class="muted" style="font-size:13px">Tap to choose from your phone</p>
+        <input type="file" id="photo" accept="image/*" aria-label="Add a photo">
+      </div>
+      <div class="ai"><span class="ai-tag">AI</span><p style="flex:1;font-size:14px">Let ShareShelf suggest a title, category and fair price.</p><button class="btn sun" id="ai-btn" style="width:auto;padding:9px 12px;font-size:14px">Suggest</button></div>
+      <div class="field"><label for="f-title">Title</label><input id="f-title" placeholder="e.g. Canon camera with 18–55 mm lens"></div>
+      <div class="field"><label for="f-cat">Category</label><select id="f-cat"></select></div>
+      <div class="two">
+        <div class="field"><label for="f-price">Price per day, €</label><input id="f-price" type="number" min="1" inputmode="numeric" placeholder="10"></div>
+        <div class="field"><label for="f-dep">Deposit, €</label><input id="f-dep" type="number" min="0" inputmode="numeric" placeholder="50"></div>
+      </div>
+      <p class="muted" id="f-hint" style="font-size:13px">Similar items nearby rent for €5–15 a day.</p>
+      <p id="f-err" style="color:#C2185B;font-weight:600;font-size:14px" hidden>Add a title and a daily price to publish.</p>
+      <button class="btn" id="publish">Publish listing</button>
+    </section>
+
+    <div class="bottombar" id="bottombar" hidden></div>
+    <div class="composer" id="composer" hidden>
+      <input id="chat-input" placeholder="Write a message…" autocomplete="off" aria-label="Message">
+      <button class="send" id="send" aria-label="Send"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12l16-8-6 16-2-7-8-1z" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg></button>
+    </div>
+
+    <nav class="tabbar" id="tabbar">
+      <button class="tab on" data-tab="home"><svg viewBox="0 0 24 24" fill="none"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" stroke-width="2" stroke-linejoin="round"/></svg>Home</button>
+      <button class="tab" data-tab="saved"><svg viewBox="0 0 24 24" fill="none"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" stroke-width="2" stroke-linejoin="round"/></svg>Saved</button>
+      <button class="tab-plus" data-tab="list" aria-label="List an item"><svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg></button>
+      <button class="tab" data-tab="chats"><svg viewBox="0 0 24 24" fill="none"><path d="M4 5h16v11H9l-5 4z" stroke-width="2" stroke-linejoin="round"/></svg>Chats</button>
+      <button class="tab" data-tab="profile"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke-width="2"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" stroke-width="2" stroke-linecap="round"/></svg>Profile</button>
+    </nav>
+
+    <div class="sheet-bg" id="sheet" hidden></div>
+    <div class="toast" id="toast" role="status"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const $ = s => document.querySelector(s);
+  const el = (h) => { const t = document.createElement('template'); t.innerHTML = h.trim(); return t.content.firstElementChild; };
+  const euro = n => '€' + (Math.round(n * 100) / 100).toString().replace(/\.(\d)$/, '.$10');
+
+  const ICON = {
+    Tools: '<path d="M14 6l4 4-9 9H5v-4z" stroke="#160F33" stroke-width="2" stroke-linejoin="round" fill="none"/><path d="M13 7l4 4" stroke="#160F33" stroke-width="2"/>',
+    Camping: '<path d="M12 4L3 20h18z" stroke="#160F33" stroke-width="2" stroke-linejoin="round" fill="none"/><path d="M12 11l-3 9h6z" fill="#160F33"/>',
+    Electronics: '<rect x="3" y="6" width="18" height="12" rx="2" stroke="#160F33" stroke-width="2" fill="none"/><circle cx="12" cy="12" r="3" stroke="#160F33" stroke-width="2" fill="none"/>',
+    Party: '<path d="M5 20l4-12 7 7z" stroke="#160F33" stroke-width="2" stroke-linejoin="round" fill="none"/><path d="M14 4v3M19 9h-3M17 5l-2 2" stroke="#160F33" stroke-width="2" stroke-linecap="round"/>',
+    Sports: '<circle cx="6" cy="17" r="3.5" stroke="#160F33" stroke-width="2" fill="none"/><circle cx="18" cy="17" r="3.5" stroke="#160F33" stroke-width="2" fill="none"/><path d="M6 17l4-8h5l3 8M10 9l2 8" stroke="#160F33" stroke-width="2" fill="none" stroke-linejoin="round"/>',
+    Kids: '<circle cx="9" cy="19" r="2" stroke="#160F33" stroke-width="2" fill="none"/><circle cx="17" cy="19" r="2" stroke="#160F33" stroke-width="2" fill="none"/><path d="M4 5h3l2 10h9l2-7H8" stroke="#160F33" stroke-width="2" fill="none" stroke-linejoin="round"/>'
+  };
+  const CAT_BG = { Tools: '#FFD23F', Camping: '#2DD4A7', Electronics: '#FF8DB9', Party: '#C9B8FF', Sports: '#9EE7D2', Kids: '#FFB3C1' };
+  const CATS = ['All', 'Tools', 'Camping', 'Electronics', 'Party', 'Sports', 'Kids'];
+
+  const SEED = [
+    { id: 'drill', title: 'Cordless drill + bit set', cat: 'Tools', price: 6, dep: 40, dist: '600 m', area: 'Kristiine', lender: 'Mari K.', ini: 'MK', col: '#2DD4A7', rating: 4.9, rentals: 32, img: ['img/drill.jpg'], desc: 'Cordless drill with two batteries and a 30-piece bit set. Great for shelves, IKEA furniture and small repairs.' },
+    { id: 'tent', title: 'Family tent for 6', cat: 'Camping', price: 12, dep: 60, dist: '1.2 km', area: 'Mustamäe', lender: 'Jaan T.', ini: 'JT', col: '#FFD23F', rating: 4.8, rentals: 14, img: ['img/tent.jpg'], cover: true, desc: 'Large two-room tent with an awning. Sets up in 15 minutes. Comes with pegs and a repair kit.' },
+    { id: 'camera', title: 'Nikon Z5 camera + lens', cat: 'Electronics', price: 25, dep: 200, dist: '900 m', area: 'Kesklinn', lender: 'Liis P.', ini: 'LP', col: '#FF8DB9', rating: 5.0, rentals: 21, img: ['img/camera.jpg'], desc: 'Full-frame mirrorless camera with a 24–50 mm lens, two batteries and a 64 GB card. Perfect for trips and events.' },
+    { id: 'speaker', title: 'JBL party speaker', cat: 'Party', price: 10, dep: 50, dist: '300 m', area: 'Kristiine', lender: 'Karl M.', ini: 'KM', col: '#C9B8FF', rating: 4.7, rentals: 40, img: ['img/speaker.jpg'], desc: 'Loud Bluetooth speaker with light show and 12 hours of battery. Ideal for birthdays and garden parties.' },
+    { id: 'projector', title: 'Full HD projector', cat: 'Electronics', price: 9, dep: 60, dist: '1.5 km', area: 'Kesklinn', lender: 'Anna R.', ini: 'AR', col: '#FFD23F', rating: 4.8, rentals: 9, img: [], desc: 'Projector with HDMI cable and a 100-inch screen. Movie nights and presentations.' },
+    { id: 'bike', title: 'City bike, 7 gears', cat: 'Sports', price: 8, dep: 50, dist: '450 m', area: 'Kristiine', lender: 'Oskar V.', ini: 'OV', col: '#2DD4A7', rating: 4.6, rentals: 18, img: [], desc: 'Comfortable city bike with a basket, lights and a lock.' },
+    { id: 'ladder', title: 'Aluminium ladder, 3 m', cat: 'Tools', price: 4, dep: 20, dist: '700 m', area: 'Kristiine', lender: 'Mari K.', ini: 'MK', col: '#2DD4A7', rating: 4.9, rentals: 26, img: [], desc: 'Light folding ladder for painting, lamps and gutters.' },
+    { id: 'stroller', title: 'Travel stroller', cat: 'Kids', price: 5, dep: 40, dist: '1.1 km', area: 'Nõmme', lender: 'Kristi L.', ini: 'KL', col: '#FFB3C1', rating: 5.0, rentals: 7, img: [], desc: 'Compact stroller that folds into a carry bag. Good for visiting grandparents or short trips.' },
+    { id: 'snowboard', title: 'Snowboard + boots (43)', cat: 'Sports', price: 15, dep: 80, dist: '2.0 km', area: 'Lasnamäe', lender: 'Martin S.', ini: 'MS', col: '#9EE7D2', rating: 4.7, rentals: 5, img: [], desc: 'All-mountain board with bindings and size 43 boots. Ready for Otepää.' },
+    { id: 'sleeping', title: 'Sleeping bag, −5 °C', cat: 'Camping', price: 3, dep: 15, dist: '600 m', area: 'Kristiine', lender: 'Jaan T.', ini: 'JT', col: '#FFD23F', rating: 4.8, rentals: 11, img: [], desc: 'Warm mummy sleeping bag, washed after every rental.' }
+  ];
+
+  let S;
+  function fresh() {
+    return { items: SEED.map(i => Object.assign({}, i)), fav: new Set(['camera']), cat: 'All', q: '', bookings: [], stack: [], tab: 'home', current: null, draft: null };
+  }
+  S = fresh();
+
+  const byId = id => S.items.find(i => i.id === id);
+  const thumbHTML = (it, cls) => it.img && it.img.length
+    ? `<img src="${it.img[0]}" alt="${it.title}" class="${it.cover ? 'cover' : ''}">`
+    : `<svg viewBox="0 0 24 24" class="${cls || ''}" aria-hidden="true">${ICON[it.cat]}</svg>`;
+  const thumbBg = it => it.img && it.img.length ? '#FFFFFF' : CAT_BG[it.cat];
+
+  /* ---------- navigation ---------- */
+  const SCREENS = ['home', 'saved', 'chats', 'profile', 'item', 'book', 'done', 'chat', 'list'];
+  const TABS = ['home', 'saved', 'chats', 'profile'];
+  function show(name, push = true) {
+    if (push && S.current && S.current !== name) S.stack.push(S.current);
+    S.current = name;
+    SCREENS.forEach(n => { $('#s-' + n).hidden = n !== name; });
+    $('#tabbar').hidden = !TABS.includes(name);
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.tab === name));
+    $('#bottombar').hidden = !(name === 'item' || name === 'book');
+    $('#composer').hidden = name !== 'chat';
+    $('#s-' + name).scrollTop = 0;
+  }
+  function back() { const prev = S.stack.pop() || 'home'; render(prev); if (prev === 'item') drawItemBar(); if (prev === 'book') drawBook(); show(prev, false); }
+  function goTab(t) { S.stack = []; render(t); show(t, false); S.current = t; }
+
+  function render(name) {
+    if (name === 'home') renderHome();
+    if (name === 'saved') renderSaved();
+    if (name === 'chats') renderChats();
+    if (name === 'profile') renderProfile();
+  }
+
+  /* ---------- toast ---------- */
+  let tt;
+  function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('show'), 2200); }
+
+  /* ---------- cards ---------- */
+  function cardEl(it) {
+    const c = el(`<div class="card" role="button" tabindex="0" aria-label="${it.title}">
+      <div class="thumb" style="background:${thumbBg(it)}">${thumbHTML(it)}</div>
+      <div class="body"><span class="t">${it.title}</span><span class="price">${euro(it.price)} / day</span><span class="meta">${it.dist} · ${it.rating.toFixed(1)} rating</span></div>
+      <button class="heart ${S.fav.has(it.id) ? 'on' : ''}" aria-label="Save"><svg viewBox="0 0 24 24" fill="none"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" stroke="#160F33" stroke-width="2" stroke-linejoin="round"/></svg></button>
+      ${it.mine ? '<span class="badge-new">Yours</span>' : ''}
+    </div>`);
+    c.addEventListener('click', e => { if (e.target.closest('.heart')) return; openItem(it.id); });
+    c.addEventListener('keydown', e => { if (e.key === 'Enter') openItem(it.id); });
+    c.querySelector('.heart').addEventListener('click', e => { e.stopPropagation(); toggleFav(it.id); e.currentTarget.classList.toggle('on', S.fav.has(it.id)); });
+    return c;
+  }
+  function toggleFav(id) {
+    if (S.fav.has(id)) { S.fav.delete(id); toast('Removed from Saved'); } else { S.fav.add(id); toast('Saved'); }
+  }
+
+  /* ---------- home ---------- */
+  function renderChips() {
+    const box = $('#chips'); box.innerHTML = '';
+    CATS.forEach(c => { const b = el(`<button class="chip ${S.cat === c ? 'on' : ''}">${c}</button>`); b.onclick = () => { S.cat = c; renderHome(); }; box.appendChild(b); });
+  }
+  function renderHome() {
+    renderChips();
+    const q = S.q.trim().toLowerCase();
+    const list = S.items.filter(i => (S.cat === 'All' || i.cat === S.cat) && (!q || (i.title + ' ' + i.cat + ' ' + i.area).toLowerCase().includes(q)));
+    const g = $('#home-grid'); g.innerHTML = '';
+    if (!list.length) g.appendChild(el(`<div class="empty" style="grid-column:1/-1">Nothing found for “${S.q}”. Try “tent”, “camera” or another category.</div>`));
+    list.forEach(i => g.appendChild(cardEl(i)));
+    $('#home-title').textContent = S.cat === 'All' ? (q ? 'Results' : 'Nearby you') : S.cat;
+    $('#home-count').textContent = list.length + (list.length === 1 ? ' item' : ' items');
+  }
+  $('#q').addEventListener('input', e => { S.q = e.target.value; renderHome(); });
+
+  function renderSaved() {
+    const g = $('#saved-grid'); g.innerHTML = '';
+    const list = S.items.filter(i => S.fav.has(i.id));
+    if (!list.length) g.appendChild(el('<div class="empty" style="grid-column:1/-1">No saved items yet. Tap the heart on any item to keep it here.</div>'));
+    list.forEach(i => g.appendChild(cardEl(i)));
+  }
+
+  /* ---------- item ---------- */
+  function openItem(id) {
+    const it = byId(id); S.item = it; S.photo = 0;
+    const s = $('#s-item');
+    const photos = it.img.length ? it.img.length + 2 : 0;
+    s.innerHTML = '';
+    s.appendChild(el(`<div class="hero" style="background:${thumbBg(it)}">
+      ${thumbHTML(it, 'big')}
+      <button class="round" data-back aria-label="Back"><svg viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="#160F33" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button class="heart ${S.fav.has(it.id) ? 'on' : ''}" aria-label="Save"><svg viewBox="0 0 24 24" fill="none"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" stroke="#160F33" stroke-width="2" stroke-linejoin="round"/></svg></button>
+      ${photos ? `<div class="dots">${Array.from({ length: photos }, (_, i) => `<button class="${i === 0 ? 'on' : ''}" aria-label="Photo ${i + 1}"></button>`).join('')}</div>` : ''}
+    </div>`));
+    s.appendChild(el(`<div class="pad">
+      <h2 style="font-size:28px">${it.title}</h2>
+      <div class="row" style="align-items:baseline"><span class="price" style="font-size:30px">${euro(it.price)}</span><span class="muted">per day · fee included</span></div>
+      <div class="box" style="grid-template-columns:auto 1fr;align-items:center">
+        <div class="avatar" style="background:${it.col}">${it.ini}</div>
+        <div><p style="font-weight:600">${it.lender} · Verified lender</p><p class="muted" style="font-size:13px">${it.rating.toFixed(1)} rating · ${it.rentals} rentals · replies in 1 h</p></div>
+      </div>
+      <p style="line-height:1.5;color:#3B3360">${it.desc}</p>
+      <div class="tags"><span>${it.area} · ${it.dist}</span><span>Meet in person</span><span>Deposit ${euro(it.dep)}</span><span>Rental agreement included</span></div>
+    </div>`));
+    s.querySelector('.hero .heart').onclick = e => { toggleFav(it.id); e.currentTarget.classList.toggle('on', S.fav.has(it.id)); };
+    s.querySelectorAll('.dots button').forEach((d, i) => d.onclick = () => { s.querySelectorAll('.dots button').forEach((x, j) => x.classList.toggle('on', i === j)); toast('Photo ' + (i + 1) + ' of ' + photos); });
+    drawItemBar();
+    show('item');
+  }
+  function drawItemBar() {
+    const it = S.item, bb = $('#bottombar');
+    bb.innerHTML = `<div style="flex:none"><p class="price" style="font-size:20px;color:#160F33">${euro(it.price)} / day</p><p class="muted" style="font-size:12px">Deposit ${euro(it.dep)}</p></div><button class="btn" id="choose">Choose dates</button>`;
+    bb.querySelector('#choose').onclick = () => openBook();
+  }
+
+  /* ---------- booking ---------- */
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  let calMonth;
+  function openBook() {
+    S.range = { a: null, b: null }; S.protect = false;
+    calMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    drawBook(); show('book');
+  }
+  const fmt = d => d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+  function days() { const { a, b } = S.range; if (!a) return 0; return Math.round(((b || a) - a) / 864e5) + 1; }
+  function drawBook() {
+    const it = S.item, s = $('#s-book');
+    const n = days(), rent = n * it.price, prot = S.protect ? n * 1 : 0, total = rent + prot;
+    const m = calMonth, first = (m.getDay() + 6) % 7, dim = new Date(m.getFullYear(), m.getMonth() + 1, 0).getDate();
+    let cells = ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map(d => `<span class="dow">${d}</span>`).join('');
+    for (let i = 0; i < first; i++) cells += '<span></span>';
+    for (let d = 1; d <= dim; d++) {
+      const dt = new Date(m.getFullYear(), m.getMonth(), d), t = dt.getTime();
+      const past = dt < today;
+      const { a, b } = S.range;
+      const edge = (a && t === a.getTime()) || (b && t === b.getTime());
+      const inr = a && b && t > a.getTime() && t < b.getTime();
+      cells += `<button data-d="${t}" ${past ? 'disabled' : ''} class="${edge ? 'edge' : inr ? 'in' : ''}">${d}</button>`;
+    }
+    const canPrev = m > new Date(today.getFullYear(), today.getMonth(), 1);
+    s.innerHTML = `
+      <div class="topbar"><button class="round" data-back aria-label="Back"><svg viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="#160F33" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button><h2 style="font-size:24px">Book: ${it.title}</h2></div>
+      <div class="box">
+        <div class="cal-head"><button class="round" id="prev" ${canPrev ? '' : 'disabled style="opacity:.3"'} aria-label="Previous month"><svg viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="#160F33" stroke-width="2.5" stroke-linecap="round"/></svg></button><b>${m.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}</b><button class="round" id="next" aria-label="Next month"><svg viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="#160F33" stroke-width="2.5" stroke-linecap="round"/></svg></button></div>
+        <div class="cal">${cells}</div>
+        <p style="color:#5B2EFF;font-weight:600;font-size:14px">${n ? fmt(S.range.a) + (S.range.b && n > 1 ? ' – ' + fmt(S.range.b) : '') + ' · ' + n + (n === 1 ? ' day' : ' days') : 'Tap a start date, then an end date'}</p>
+      </div>
+      <div class="box">
+        <div class="row between"><div><p style="font-weight:600">Damage protection</p><p class="muted" style="font-size:13px">€1 a day, covers repairs up to €300</p></div><button class="switch ${S.protect ? 'on' : ''}" id="prot" role="switch" aria-checked="${S.protect}" aria-label="Damage protection"></button></div>
+      </div>
+      <div class="box">
+        <div class="line"><span>${n || 0} × ${euro(it.price)}</span><b>${euro(rent)}</b></div>
+        <div class="line"><span>Platform fee</span><b>Included</b></div>
+        <div class="line"><span>Damage protection</span><b>${S.protect ? euro(prot) : '—'}</b></div>
+        <div class="line"><span>Deposit, returned after rental</span><b>${euro(it.dep)} held</b></div>
+        <div class="line total"><span>Charged now</span><span>${euro(total)}</span></div>
+      </div>
+      <p class="muted" style="font-size:13px;line-height:1.45">Money is held safely until pickup. Free cancellation up to 24 h before. By paying you accept the ShareShelf rental agreement.</p>`;
+    s.querySelectorAll('.cal button[data-d]').forEach(b => b.onclick = () => pick(new Date(+b.dataset.d)));
+    s.querySelector('#prev').onclick = () => { if (canPrev) { calMonth = new Date(m.getFullYear(), m.getMonth() - 1, 1); drawBook(); } };
+    s.querySelector('#next').onclick = () => { calMonth = new Date(m.getFullYear(), m.getMonth() + 1, 1); drawBook(); };
+    s.querySelector('#prot').onclick = () => { S.protect = !S.protect; drawBook(); };
+    const bb = $('#bottombar');
+    bb.innerHTML = `<button class="btn" id="pay" ${n ? '' : 'disabled'}>${n ? 'Pay ' + euro(total) : 'Choose dates first'}</button>`;
+    bb.querySelector('#pay').onclick = () => n && paySheet(total);
+  }
+  function pick(d) {
+    const r = S.range;
+    if (!r.a || (r.a && r.b)) { S.range = { a: d, b: null }; }
+    else if (d < r.a) { S.range = { a: d, b: null }; }
+    else { r.b = d; }
+    const n = days();
+    if (n > 14) { S.range = { a: S.range.a, b: null }; toast('Maximum rental is 14 days'); }
+    drawBook();
+  }
+
+  /* ---------- payment ---------- */
+  function paySheet(total) {
+    const sh = $('#sheet');
+    sh.innerHTML = `<div class="sheet" role="dialog" aria-label="Payment">
+      <div class="row between"><h3>Confirm payment</h3><button class="round" id="close-sheet" aria-label="Close" style="width:36px;height:36px"><svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="#160F33" stroke-width="2.5" stroke-linecap="round"/></svg></button></div>
+      <div class="cardline"><span class="cardchip">DEMO</span><span style="flex:1">Test card •••• 4242</span><span class="muted">selected</span></div>
+      <div class="line total" style="border-top:0;padding-top:0"><span>Charged now</span><span>${euro(total)}</span></div>
+      <p class="muted" style="font-size:13px">Demo only. No money is charged.</p>
+      <button class="btn" id="confirm-pay">Pay ${euro(total)}</button></div>`;
+    sh.hidden = false;
+    sh.querySelector('#close-sheet').onclick = () => sh.hidden = true;
+    sh.onclick = e => { if (e.target === sh) sh.hidden = true; };
+    sh.querySelector('#confirm-pay').onclick = e => {
+      e.currentTarget.textContent = 'Processing…'; e.currentTarget.disabled = true;
+      setTimeout(() => { sh.hidden = true; confirmBooking(total); }, 900);
+    };
+  }
+  function confirmBooking(total) {
+    const it = S.item;
+    const bk = { id: 'b' + Date.now(), item: it.id, a: S.range.a, b: S.range.b || S.range.a, n: days(), total, status: 'Booked', photos: [false, false, false],
+      msgs: [{ who: 'sys', text: 'Booking confirmed · ' + fmt(S.range.a) }, { who: 'them', text: `Hi! Thanks for booking my ${it.title.toLowerCase()}. When would you like to pick it up?` }], replies: 0 };
+    S.bookings.unshift(bk); S.chat = bk;
+    const s = $('#s-done');
+    s.innerHTML = `<div style="height:40px"></div>
+      <div class="bigcheck"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <h2 style="font-size:32px">Booked! The ${it.title.toLowerCase()} is yours.</h2>
+      <div class="box">
+        <div class="line"><span>Item</span><b>${it.title}</b></div>
+        <div class="line"><span>Dates</span><b>${fmt(bk.a)}${bk.n > 1 ? ' – ' + fmt(bk.b) : ''}</b></div>
+        <div class="line"><span>Lender</span><b>${it.lender}, ${it.area}</b></div>
+        <div class="line"><span>Charged now</span><b>${euro(total)}</b></div>
+      </div>
+      <p style="font-weight:500;line-height:1.45">Next: agree on a pickup time in the chat and take condition photos at pickup.</p>
+      <button class="btn" id="msg-lender">Message ${it.lender.split(' ')[0]}</button>
+      <button class="btn alt" id="to-home">Back to home</button>`;
+    s.querySelector('#msg-lender').onclick = () => openChat(bk.id);
+    s.querySelector('#to-home').onclick = () => goTab('home');
+    S.stack = [];
+    show('done', false); S.current = 'done';
+  }
+
+  /* ---------- chat ---------- */
+  const REPLIES = [
+    'Saturday at 10:30 works for me. I live at Sõpruse pst 151, call me from the door.',
+    'Great! Please take the condition photos when you pick it up, it protects us both.',
+    'Sure, no problem. See you soon!',
+    'Thanks! Have fun with it.'
+  ];
+  function openChat(id) {
+    const bk = S.bookings.find(b => b.id === id); S.chat = bk;
+    drawChat(); show('chat'); $('#s-chat').scrollTop = $('#s-chat').scrollHeight;
+    setTimeout(() => $('#chat-input').focus({ preventScroll: true }), 50);
+  }
+  function drawChat(typing) {
+    const bk = S.chat, it = byId(bk.item), s = $('#s-chat');
+    const done = bk.photos.filter(Boolean).length;
+    s.innerHTML = `
+      <div class="topbar"><button class="round" data-back aria-label="Back"><svg viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="#160F33" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <div class="avatar" style="background:${it.col}">${it.ini}</div><div><p style="font-weight:700">${it.lender}</p><p class="muted" style="font-size:13px">${it.title} · ${fmt(bk.a)}</p></div></div>
+      <div class="msgs">${bk.msgs.map(m => `<div class="msg ${m.who}">${m.text}</div>`).join('')}${typing ? '<div class="typing">' + it.lender.split(' ')[0] + ' is typing…</div>' : ''}</div>
+      <div class="box" style="border-style:dashed;border-color:#5B2EFF">
+        <div class="row between"><p style="font-weight:700">Pickup checklist</p><span class="status ${done === 3 ? 'st-picked' : 'st-booked'}">${done}/3 photos</span></div>
+        <p class="muted" style="font-size:13px">Take 3 photos at pickup. They protect you and ${it.lender.split(' ')[0]} if something breaks.</p>
+        ${['Front of the item', 'Back and sides', 'Accessories and cables'].map((t, i) => `<button class="check-item ${bk.photos[i] ? 'done' : ''}" data-p="${i}"><span class="box-i">${bk.photos[i] ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#160F33" stroke-width="3" stroke-linecap="round"/></svg>' : ''}</span>${bk.photos[i] ? 'Photo taken: ' : 'Take photo: '}${t}</button>`).join('')}
+      </div>`;
+    s.querySelectorAll('.check-item').forEach(b => b.onclick = () => {
+      const i = +b.dataset.p; bk.photos[i] = true;
+      if (bk.photos.every(Boolean) && bk.status === 'Booked') {
+        bk.status = 'Picked up';
+        bk.msgs.push({ who: 'sys', text: 'Pickup confirmed · payment released to ' + it.lender.split(' ')[0] });
+        toast('Pickup confirmed');
+      }
+      drawChat();
+    });
+    s.scrollTop = s.scrollHeight;
+  }
+  function send() {
+    const inp = $('#chat-input'), text = inp.value.trim();
+    if (!text) return;
+    const bk = S.chat; bk.msgs.push({ who: 'me', text }); inp.value = '';
+    drawChat(true);
+    setTimeout(() => { bk.msgs.push({ who: 'them', text: REPLIES[Math.min(bk.replies, REPLIES.length - 1)] }); bk.replies++; if (S.current === 'chat') drawChat(); }, 1200);
+  }
+  $('#send').onclick = send;
+  $('#chat-input').addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+
+  function renderChats() {
+    const box = $('#chats-list'); box.innerHTML = '';
+    if (!S.bookings.length) { box.appendChild(el('<div class="empty">No chats yet. Book an item and your chat with the lender appears here.</div>')); return; }
+    S.bookings.forEach(bk => {
+      const it = byId(bk.item), last = bk.msgs[bk.msgs.length - 1];
+      const b = el(`<button class="list-item"><div class="avatar" style="background:${it.col}">${it.ini}</div><div style="flex:1;min-width:0"><p style="font-weight:700">${it.lender}</p><p class="muted" style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${last.text}</p></div><span class="status ${bk.status === 'Booked' ? 'st-booked' : 'st-picked'}">${bk.status}</span></button>`);
+      b.onclick = () => openChat(bk.id); box.appendChild(b);
+    });
+  }
+
+  /* ---------- profile ---------- */
+  function rowItem(it, right) {
+    return el(`<button class="list-item"><div class="mini" style="background:${thumbBg(it)}">${thumbHTML(it)}</div><div style="flex:1;min-width:0"><p style="font-weight:600">${it.title}</p><p class="muted" style="font-size:13px">${right.sub}</p></div><span class="status ${right.cls}">${right.label}</span></button>`);
+  }
+  function renderProfile() {
+    const b = $('#my-bookings'); b.innerHTML = '';
+    if (!S.bookings.length) b.appendChild(el('<div class="empty">No bookings yet. Find something on the home screen.</div>'));
+    S.bookings.forEach(bk => { const it = byId(bk.item); const r = rowItem(it, { sub: fmt(bk.a) + ' · ' + euro(bk.total), label: bk.status, cls: bk.status === 'Booked' ? 'st-booked' : 'st-picked' }); r.onclick = () => openChat(bk.id); b.appendChild(r); });
+    const l = $('#my-listings'); l.innerHTML = '';
+    const mine = S.items.filter(i => i.mine);
+    if (!mine.length) { const e = el('<div class="empty">You have not listed anything yet. Tap + to earn from things you rarely use.</div>'); l.appendChild(e); }
+    mine.forEach(it => { const r = rowItem(it, { sub: euro(it.price) + ' / day', label: 'Live', cls: 'st-live' }); r.onclick = () => openItem(it.id); l.appendChild(r); });
+  }
+  $('#reset').onclick = () => { const keep = S.current; S = fresh(); $('#q').value = ''; goTab('home'); toast('Demo reset'); };
+
+  /* ---------- list an item ---------- */
+  const fCat = $('#f-cat');
+  CATS.slice(1).forEach(c => fCat.appendChild(el(`<option>${c}</option>`)));
+  const HINT = { Tools: [3, 8], Camping: [3, 15], Electronics: [8, 30], Party: [6, 15], Sports: [6, 18], Kids: [3, 8] };
+  const SUGGEST = { Tools: ['Bosch hammer drill with case', 6, 40], Camping: ['Camping stove with gas cartridge', 4, 20], Electronics: ['Canon EOS 250D camera with 18–55 mm lens', 15, 100], Party: ['LED party lights, set of 4', 7, 30], Sports: ['Stand-up paddle board (SUP)', 18, 100], Kids: ['Child car seat, 9–18 kg', 5, 40] };
+  function hint() { const h = HINT[fCat.value]; $('#f-hint').textContent = `Similar ${fCat.value.toLowerCase()} items nearby rent for €${h[0]}–${h[1]} a day.`; }
+  fCat.onchange = hint;
+  $('#photo').addEventListener('change', e => {
+    const f = e.target.files && e.target.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = () => { const up = $('#upload'); let im = up.querySelector('img'); if (!im) { im = document.createElement('img'); up.insertBefore(im, up.firstChild); } im.src = r.result; im.alt = 'Your photo'; S.draft = r.result; toast('Photo added'); };
+    r.readAsDataURL(f);
+  });
+  $('#ai-btn').onclick = () => {
+    const b = $('#ai-btn'); b.textContent = 'Thinking…'; b.disabled = true;
+    setTimeout(() => {
+      const s = SUGGEST[fCat.value];
+      $('#f-title').value = s[0]; $('#f-price').value = s[1]; $('#f-dep').value = s[2];
+      b.textContent = 'Suggest'; b.disabled = false; toast('Suggestion filled in, edit if needed'); $('#f-err').hidden = true;
+    }, 800);
+  };
+  $('#publish').onclick = () => {
+    const title = $('#f-title').value.trim(), price = parseFloat($('#f-price').value), dep = parseFloat($('#f-dep').value) || 0;
+    if (!title || !(price > 0)) { $('#f-err').hidden = false; return; }
+    const it = { id: 'my' + Date.now(), title, cat: fCat.value, price, dep, dist: '0 m', area: 'Kristiine', lender: 'Aleksandr G.', ini: 'AG', col: '#FFD23F', rating: 5.0, rentals: 0, img: S.draft ? [S.draft] : [], cover: true, mine: true, desc: 'Listed just now from the ShareShelf prototype.' };
+    S.items.unshift(it); S.draft = null;
+    ['#f-title', '#f-price', '#f-dep'].forEach(s => $(s).value = '');
+    const im = $('#upload img'); if (im) im.remove(); $('#photo').value = '';
+    $('#f-err').hidden = true;
+    S.cat = 'All'; S.q = ''; $('#q').value = '';
+    goTab('home'); toast('Your listing is live');
+  };
+
+  /* ---------- wiring ---------- */
+  document.addEventListener('click', e => { if (e.target.closest('[data-back]')) back(); });
+  document.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => {
+    const t = b.dataset.tab;
+    if (t === 'list') { hint(); show('list'); return; }
+    goTab(t);
+  });
+
+  renderHome(); show('home', false); S.current = 'home';
+})();
+</script>
+
+</body>
+</html>
