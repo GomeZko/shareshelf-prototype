@@ -72,6 +72,10 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .screen.no-tab { padding-bottom: calc(130px + env(safe-area-inset-bottom, 0px)); }
 .screen.flush { padding: 0 0 calc(130px + env(safe-area-inset-bottom, 0px)); gap: 0; }
 .screen[hidden] { display: none !important; }
+.screen > * { flex-shrink: 0; }
+.card { flex-shrink: 0; }
+.thumb { flex: none; }
+.pad > * { min-width: 0; }
 
 h2 { font-family: var(--f-display); font-weight: 800; font-size: 30px; line-height: 1.05; margin: 0; letter-spacing: -.5px; text-wrap: balance; }
 h3 { font-family: var(--f-display); font-weight: 800; font-size: 20px; margin: 0; }
